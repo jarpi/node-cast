@@ -11,6 +11,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "express": "^4.14.0",
+    "iconv-lite": "^0.4.15",
     "selenium-webdriver": "^3.0.1"
   },
   "devDependencies": {
