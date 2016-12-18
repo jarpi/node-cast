@@ -3,9 +3,8 @@
 var webdriver = require('selenium-webdriver');
 var chrome = require('selenium-webdriver/chrome');
 var express = require('express');
-var app = express();
 var request = require('request');
-var iconv  = require('iconv-lite');
+var app = express();
 
 var driver = new webdriver.Builder()
 .forBrowser('chrome')
@@ -21,36 +20,30 @@ function goToUrl(req, res) {
 
 function getResource(req, res) {
     var resourceName = req.params.resource || '';
-    var resourceUrl = currentUrl + '/' + resourceName;
+    var resourceUrl = 'http://' + currentUrl + (resourceName ? '/' + resourceName : '');
     return new Promise(function(resolve, reject){
-        request({url: resourceUrl }, function(err, ress, body){
+        request({url: resourceUrl, encoding:null}, function(err, ress, body){
+            if (err) return reject(err);
             return resolve({body:body, headers:ress.headers});
         });
     });
 }
 
-app.use(function(err, req, res, next) {
-    return res.status(400).send(err);
-});
-
-app.get('/to/:url', function(req, res, next) {
-    currentUrl = 'http://' + req.params.url.substr(req.params.url.indexOf('/to/')+1);
-    return goToUrl(req, res)
-       .then(function(isLoaded){ return getResource(req, res); })
-       .then(function(val) { res.pageSource = val.body; res.customHeaders = val.headers || {}; return;})
-       .then(function(){return Object.keys(res.customHeaders).forEach(function(key){res.set(key, res.customHeaders[key]);});})
-       .then(function(){return res.status(200).send(res.pageSource);})
-       .catch(function(err) { return next(err); });
-
-});
-
 app.get('/*', function(req, res, next) {
-    req.params.resource = req.params['0'];
+    var host = req.originalUrl.substr(1);
+    console.dir(host);
+    if (host.match(/^(w{3}\.?)([^\/]*\.)(.{2,3}).*/)) currentUrl = host;
+    console.dir(currentUrl);
+    req.params.resource = (host === currentUrl ? '' : host);
     return getResource(req, res)
        .then(function(val) {res.pageSource = val.body; res.customHeaders = val.headers || {}; return;})
        .then(function(){return Object.keys(res.customHeaders).forEach(function(key){res.set(key, res.customHeaders[key]);});})
        .then(function(){return res.status(200).send(res.pageSource);})
        .catch(function(err) { next(err); });
+});
+
+app.use(function(err, req, res, next) {
+    return res.status(400).send(err);
 });
 
 app.listen(3000, function() {
