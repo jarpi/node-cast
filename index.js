@@ -1,13 +1,13 @@
 "use strict";
 
 var webdriver = require('selenium-webdriver');
-var chrome = require('selenium-webdriver/chrome');
+var chrome = require('selenium-webdriver/firefox');
 var express = require('express');
 var request = require('request');
 var app = express();
 
 var driver = new webdriver.Builder()
-.forBrowser('chrome')
+.forBrowser('firefox')
 .build();
 
 var currentUrl = '';
@@ -34,7 +34,7 @@ function getResource(req, res) {
 
 app.get('/*', function(req, res, next) {
     var host = req.originalUrl.substr(1);
-    var matchedHost = host.match(/http:\/\/([^\/]*\.{1}[A-z]{2,3})\/.*/);
+    var matchedHost = host.match(/http:\/\/([^\/]*\.{1}[A-z]{2,3})\/?.*/);
     req.params.resource = (matchedHost || host === currentUrl ? '' : host);
     return goToUrl(matchedHost).then(function(){if (matchedHost && matchedHost[0] && currentUrl !== matchedHost[0]) {currentUrl = matchedHost[0].substr(matchedHost[0].indexOf('://')+3); return; }})
        .then(function(){ return getResource(req, res) })
