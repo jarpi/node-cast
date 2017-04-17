@@ -3,14 +3,29 @@
 var webdriver = require('selenium-webdriver');
 var chrome = require('selenium-webdriver/firefox');
 var express = require('express');
+var bodyParser = require('body-parser');
 var request = require('request');
 var app = express();
+var fs = require('fs');
+app.use(bodyParser.json());
 
 var driver = new webdriver.Builder()
 .forBrowser('firefox')
 .build();
 
 var currentUrl = '';
+var interceptorCode = fs.readFileSync('./interceptor.js', 'utf8');
+
+function execJs(code) {
+    driver.executeScript(code)
+    .then(function(res){
+        console.dir(res);
+    })
+    .catch(function(err){
+        console.dir(err);
+    });
+    return;
+}
 
 function goToUrl(url) {
     if (!url || url[0] === currentUrl) return Promise.resolve(false);
@@ -27,10 +42,17 @@ function getResource(req, res) {
             if (err) return reject(err);
             ress.headers['host'] = currentUrl;
             ress.headers['referer'] = currentUrl;
+            if (resourceUrl === currentUrl) console.log(1); body = body.toString().replace('</body>', interceptorCode.toString()+'</body>');
             return resolve({body:body, headers:ress.headers});
         });
     });
 }
+
+app.post('/event', function(req, res, next){
+    console.dir(req.body);
+    execJs("window.scrollTo(0, " + req.body.scroll + ")");
+    // res.status(200).send(req.body);
+});
 
 app.get('/*', function(req, res, next) {
     var host = req.originalUrl.substr(1);
@@ -49,7 +71,7 @@ app.use(function(err, req, res, next) {
     return res.status(400).send(err);
 });
 
-app.listen(3000, function() {
+app.listen(5000, function() {
     console.log('Express running');
 });
 
