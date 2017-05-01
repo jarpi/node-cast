@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var request = require('request');
 var app = express();
 var fs = require('fs');
+var port = 5000;
 app.use(bodyParser.json());
 
 var driver = new webdriver.Builder()
@@ -17,14 +18,14 @@ var currentUrl = '';
 var interceptorCode = fs.readFileSync('./interceptor.js', 'utf8');
 
 function execJs(code) {
-    driver.executeScript(code)
+    return driver.executeScript(code)
     .then(function(res){
-        console.dir(res);
+        return res;
     })
     .catch(function(err){
-        console.dir(err);
+        console.dir('EXECJS ERR: ' + err);
+        return null;
     });
-    return;
 }
 
 function goToUrl(url) {
@@ -49,9 +50,16 @@ function getResource(req, res) {
 }
 
 app.post('/event', function(req, res, next){
-    console.dir(req.body);
-    execJs("window.scrollTo(0, " + req.body.scroll + ")");
-    // res.status(200).send(req.body);
+    execJs("return window.scrollMaxY")
+    .then(function(height){
+        return execJs("window.scrollTo(0, " + ((req.body.scroll*height)/100) + ")");
+    })
+    .then(function(){
+        return res.status(200).send();
+    })
+    .catch(function(err){
+        console.dir('ERR: ' + err);
+    })
 });
 
 app.get('/*', function(req, res, next) {
@@ -71,7 +79,7 @@ app.use(function(err, req, res, next) {
     return res.status(400).send(err);
 });
 
-app.listen(5000, function() {
-    console.log('Express running');
+app.listen(port, function() {
+    console.log('Express running: ' + port);
 });
 
