@@ -65,6 +65,7 @@ app.post('/event', function(req, res, next){
 app.get('/*', function(req, res, next) {
     var host = req.originalUrl.substr(1);
     var matchedHost = host.match(/http:\/\/([^\/]*\.{1}[A-z]{2,3})\/?.*/);
+    console.dir(matchedHost)
     req.params.resource = (matchedHost || host === currentUrl ? '' : host);
     return goToUrl(matchedHost).then(function(){if (matchedHost && matchedHost[0] && currentUrl !== matchedHost[0]) {currentUrl = matchedHost[0].substr(matchedHost[0].indexOf('://')+3); return; }})
        .then(function(){ return getResource(req, res) })

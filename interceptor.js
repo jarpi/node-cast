@@ -8,7 +8,7 @@ function interceptor() {
 
         var req = new XMLHttpRequest();
 
-        req.open('POST', 'http://192.168.1.87:5000/event', true);
+        req.open('POST', 'http://localhost:5000/event', true);
 
         req.setRequestHeader("Content-Type", "application/json");
 
@@ -42,13 +42,13 @@ function interceptor() {
     });
 
     // Fix this
-    window.onpopstate(function(e){
+    /* window.onpopstate(function(e){
         console.dir('popstate');
         console.dir(e);
         e.preventDefault();
         e.stopPropagation();
         // window.location.href = document.location;
-    });
+    });*/
 };
 interceptor();
 </script>
