@@ -44,6 +44,7 @@ function getResource(url, res) {
             if (err) return reject(err);
            body = body.toString().replace('</body>', interceptorCode.toString()+'</body>');
             body = body.toString().replace(/((src|href)\s*=\s*("|'))(\/{1}\w+)/ig,"$1http://" + currentUrl + "$4")
+            body = body.toString().replace(/((action)\s*=\s*("|'))(\/{1}\w+)/ig, "$1/http://" + currentUrl + "$4")
             return resolve(body);
         })
     });
@@ -77,6 +78,8 @@ app.get('/http://:url([A-z0-9]+\.[A-z0-9]+\.[A-z0-9]+)/:res(*)*', (req, res, nex
 })
 
 app.get('/*', function(req, res, next) {
+    console.dir('getResource')
+    console.dir(req.originalUrl)
     return getResource('http://' + currentUrl + req.originalUrl, res)
         .then(function(body){return res.status(200).send(body);})
         .catch(function(err) { next(err); });
