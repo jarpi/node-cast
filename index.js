@@ -34,17 +34,16 @@ function goToUrl(url) {
         .then(function() {return; })
 }
 
-function getResource(req, res) {
-    var resourceName = req.params.resource || '';
-    var resourceUrl = 'http://' + currentUrl + (resourceName ? '/' + resourceName : '');
+function getResource(url, currentUrl, res) {
     console.dir('resource')
-    console.dir(resourceUrl);
+    console.dir(url);
     return new Promise(function(resolve, reject){
-        request({url: resourceUrl, encoding:null, headers:{referer:currentUrl}}, function(err, ress, body){
+        request({url: url, encoding:null, headers:{referer:currentUrl}}, function(err, ress, body){
             if (err) return reject(err);
             res.set('host', currentUrl)
             res.set('referer', currentUrl)
-            if (resourceUrl === currentUrl) console.log(1); body = body.toString().replace('</body>', interceptorCode.toString()+'</body>');
+            body = body.toString().replace('</body>', interceptorCode.toString()+'</body>');
+            body = body.toString().replace(/((src|href)\s*=\s*("|'))(\/{1}\w+)/ig,"$1http://" + currentUrl + "$4")
             return resolve(body);
         });
     });
@@ -63,31 +62,26 @@ app.post('/event', function(req, res, next){
         })
 });
 
-app.get('/http://:url(*)', (req, res, next) => {
+app.get('/http://:url([A-z0-9]+\.[A-z0-9]+\.[A-z0-9]+)/:res(*)*', (req, res, next) => {
     console.dir('hit!')
+	console.dir(req.params)
+    console.dir(req.originalUrl)
     return goToUrl(req.originalUrl.substr(1))
-        .then(function updateCurrentUrl(){
-            if (req.params.url !== currentUrl) {
-                currentUrl = req.params.url
-            }
-            return
-        })
-        .then(function(){ return getResource(req, res) })
+        .then(function(){ return getResource(req.originalUrl.substr(1),req.params.url, res) })
         .then(function(body){return res.status(200).send(body);})
         .catch(function(err) { next(err); });
 
 })
 
 app.get('/*', function(req, res, next) {
+    console.dir(req)
     var host = req.originalUrl.substr(1);
     var matchedHost = host.match(/http:\/\/([^\/]*\.{1}[A-z]{2,3})\/?.*/);
     console.dir(host)
     req.params.resource = (matchedHost || host === currentUrl ? '' : host);
     return goToUrl(matchedHost).then(function(){if (matchedHost && matchedHost[0] && currentUrl !== matchedHost[0]) {currentUrl = matchedHost[0].substr(matchedHost[0].indexOf('://')+3); return; }})
         .then(function(){ return getResource(req, res) })
-        .then(function(val) {res.pageSource = val.body; res.customHeaders = val.headers || {}; return;})
-        .then(function(){return Object.keys(res.customHeaders).forEach(function(key){res.set(key, res.customHeaders[key]);});})
-        .then(function(){return res.status(200).send(res.pageSource);})
+        .then(function(body){return res.status(200).send(body);})
         .catch(function(err) { next(err); });
 });
 

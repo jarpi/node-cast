@@ -35,8 +35,10 @@ function interceptor() {
         console.dir(e);
         e.preventDefault();
         e.stopPropagation();
-        if (e.target.pathname) {
-            var url = e.originalTarget.baseURI + e.target.pathname;
+        console.dir(e)
+        if (e.target.href) {
+            var url = e.originalTarget.baseURI.match(/(http:\/\/[A-z\d:]+\/)/)[1] + e.target.href.replace('https', 'http');
+            console.dir(url)
             window.location.href = url;
         }
     });
